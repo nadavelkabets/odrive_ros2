@@ -7,8 +7,12 @@ from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.task import Future
 from motor_controller_utils import rps_to_rpm, rpm_to_rps
+from contextlib import contextmanager
 
 DEFAULT_QOS = 10
+
+# TODO create generic motor error class
+# TODO must use try except in higher implementation to catch motor errors
 
 @dataclass
 class OdriveTelemetry:
@@ -30,6 +34,8 @@ class OdriveTelemetry:
         self.active_errors = 0
         self.disarm_reason = 0
 
+        self.is_brake_locked = False
+
 
 class OdriveController(MotorControllerInterface):
     def __init__(self, node: Node):
@@ -42,19 +48,23 @@ class OdriveController(MotorControllerInterface):
         self._axis_state_service_client = self.node.create_client(AxisStateService, "request_axis_state", callback_group=ReentrantCallbackGroup())
 
     async def roll_position(self, position_cycles: float):
-        # set odrive to closed loop control
-        axis_state_request_result = await self._request_axis_state(AxisState.CLOSED_LOOP_CONTROL)
-        if axis_state_service_response.
+        # TODO: idea - define a minimum average travel velocity and check if since start_time the actual average velocity is larger
+        async with self._closed_loop_control:
+           with self._brake:
+               pass
 
-    def roll_velocity(self, velocity_rpm: float):
-        pass
+    async def roll_velocity(self, velocity_rpm: float):
+        await self._request_axis_state(AxisState.CLOSED_LOOP_CONTROL)
+        self.set_brake_state(is_brake_locked=False)
+        self._publish_velocity_command(velocity_rpm=velocity_rpm)
 
-    def roll_duty(self, duty_cycle: float):
+    async def roll_duty(self, duty_cycle: float):
         pass
+               
 
     async def calibrate(self):
         await self._request_axis_state(AxisState.IDLE)
-        # return if successful or not
+        # TODO return if successful or not
 
     async def abort(self):
         # TODO: if currently idle, ignore. if in action - send abort
@@ -66,6 +76,36 @@ class OdriveController(MotorControllerInterface):
 
     def set_brake_state(is_brake_locked: bool):
         pass
+    
+    @contextmanager
+    async def _closed_loop_control(self):
+        if self.telemetry.axis_state == AxisState.IDLE:
+            await self._request_axis_state(AxisState.CLOSED_LOOP_CONTROL)
+            # TODO add if check_for_axis_errors
+            yield
+
+        elif self.telemetry.axis_state == AxisState.CLOSED_LOOP_CONTROL:
+            # TODO need to check for errors?
+            yield
+
+        else:
+            raise MotorControllerError # expend this and add more error types
+        
+        await self._request_axis_state(AxisState.IDLE)
+        # TODO add if check_for_axis_errors and raise error
+
+    @contextmanager
+    def _brake(self):
+        # WARNING! YOU MUST USE CLOSED LOOP CONTROL BEFORE BRAKE!
+        if self.telemetry.is_brake_locked:
+            self.set_brake_state(is_brake_locked=False)
+            yield
+
+        else:
+            yield
+
+        self.set_brake_state(is_brake_locked=True)
+
 
     async def _reach_complete_stop(self):
         self._publish_velocity_command(velocity_rpm=0)
@@ -86,10 +126,15 @@ class OdriveController(MotorControllerInterface):
         self._sleep_future.done()
         self._end_sleep_timer.cancel()
 
-    async def _request_axis_state(self, state: AxisState) -> AxisStateService.Response:
+    async def _request_axis_state(self, requested_state: AxisState) -> AxisStateService.Response:
         # TODO: add timeout
-        axis_state_service_request = AxisStateService.Request(axis_requested_state=AxisState.CLOSED_LOOP_CONTROL)
-        return await self._axis_state_service_client.call_async(axis_state_service_request)
+        # TODO check for errors
+        # TODO!!! CHECK WHEN THE SERVICE RETURNS??? DOES IT WAIT FOR THE STATE CHANGE TO COMPLETE???
+        if self.telemetry.axis_state not in [AxisState.IDLE, AxisState.CLOSED_LOOP_CONTROL]:
+            raise MotorControllerError # TODO add error type
+        if self.telemetry.axis_state != requested_state:
+            axis_state_service_request = AxisStateService.Request(axis_requested_state=AxisState.CLOSED_LOOP_CONTROL)
+            return await self._axis_state_service_client.call_async(axis_state_service_request)
     
     def _publish_velocity_command(self, velocity_rpm: float):
         velocity_command = ControlMessage(control_mode = ControlMode.VELOCITY_CONTROL, input_mode = InputMode.VEL_RAMP)
