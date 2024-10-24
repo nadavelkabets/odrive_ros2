@@ -134,7 +134,7 @@ class OdriveController(MotorControllerInterface):
         self._end_sleep_timer = self.node.create_timer(time_seconds, self._end_sleep_timer_callback)
         return self._sleep_future
 
-    def _end_ros_sleep_timer_callback(self):
+    def _end_sleep_timer_callback(self):
         self._sleep_future.done()
         self._end_sleep_timer.cancel()
 
@@ -150,7 +150,7 @@ class OdriveController(MotorControllerInterface):
     
     def _publish_velocity_command(self, requested_velocity_rpm: float):
         velocity_command = ControlMessage(control_mode = ControlMode.VELOCITY_CONTROL, input_mode = InputMode.VEL_RAMP)
-        velocity_command.input_vel = requested_velocity_rpm
+        velocity_command.input_vel = rpm_to_rps(requested_velocity_rpm)
         self._control_message_publisher.publish(velocity_command)
 
     def _publish_position_command(self, requested_position_cycles: float):

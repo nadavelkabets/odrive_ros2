@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'companion_computer'
+package_name = 'odrive_controller'
 
 setup(
     name=package_name,
@@ -13,8 +13,8 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='parallels',
-    maintainer_email='parallels@todo.todo',
+    maintainer='nadav',
+    maintainer_email='elnadav12@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],

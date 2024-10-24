@@ -1,3 +1,0 @@
-[submodule "odrive_can"]
-	path = src/odrive_can
-	url = https://github.com/odriverobotics/odrive_can.git
