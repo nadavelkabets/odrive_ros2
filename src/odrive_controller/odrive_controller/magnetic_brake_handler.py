@@ -27,8 +27,8 @@ class MagneticBrakeHandler:
 
     def _set_brake_state_callback(self, req: SetBool.Request, res: SetBool.Response) -> SetBool.Response:
         self._update_brake_state()
-        if self._is_brake_released != req.data:
-            error_code = self._set_brake_state()
+        if self._is_brake_released != req.data :
+            error_code = self._set_brake_state(req.data)
             if not error_code:
                 res.success = True
                 res.message = f"Changed brake state to {'released' if self._is_brake_released else 'locked'}"

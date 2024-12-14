@@ -14,32 +14,6 @@ import time
 DEFAULT_QOS = 10
 MAGNETIC_BRAKE_PIN = 22 #TS
 
-# TODO create generic motor error class
-# TODO must use try except in higher implementation to catch motor errors
-# TODO: raise error if unable to complete request, and catch and deal with error in higher logic
-
-@dataclass
-class OdriveTelemetry:
-    def __init__(self):
-        self.position_cycles = 0.0
-        self.velocity_rpm = 0.0
-        self.torque_target = 0.0
-        self.torque_estimate = 0.0
-        self.iq_setpoint = 0.0
-        self.iq_measured = 0.0
-        self.active_errors = 0
-        self.axis_state = 0
-        self.procedure_result = 0
-        self.trajectory_done_flag = False
-        self.bus_voltage = 0.0
-        self.bus_current = 0.0
-        self.fet_temperature = 0.0
-        self.motor_temperature = 0.0
-        self.active_errors = 0
-        self.disarm_reason = 0
-
-        self.is_brake_locked = False
-
 
 class OdriveController(MotorControllerInterface):
     NOMINAL_ODRIVE_STATES = [AxisState.IDLE, AxisState.CLOSED_LOOP_CONTROL]
