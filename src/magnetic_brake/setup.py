@@ -19,6 +19,6 @@ setup(
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ["magnetic_brake_node = magnetic_braker.main:main"],
+        'console_scripts': ["magnetic_brake_node = magnetic_brake.main:main"],
     },
 )
