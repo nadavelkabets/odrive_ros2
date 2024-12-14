@@ -1,5 +1,3 @@
-from zipfile import error
-
 from rclpy.node import Node
 from std_srvs.srv import SetBool
 from std_msgs.msg import Bool

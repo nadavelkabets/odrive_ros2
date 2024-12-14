@@ -1,3 +1,5 @@
+from typing import Optional
+
 from motor_controller_interface import MotorControllerInterface
 from odrive_can.msg import ControllerStatus, ControlMessage, ODriveStatus
 from odrive_can.srv import AxisState as AxisStateService
@@ -19,19 +21,15 @@ class OdriveController(MotorControllerInterface):
     NOMINAL_ODRIVE_STATES = [AxisState.IDLE, AxisState.CLOSED_LOOP_CONTROL]
 
     def __init__(self, node: Node):
-        # init class attributes
         self.node = node
-        self.telemetry = OdriveTelemetry()
+        self._last_odrive_status: Optional[ODriveStatus] = None
+        self._last_controller_status: Optional[ControllerStatus] = None
         
-        # init ros interfaces
         self._odrive_status_subscriber = self.node.create_subscription(ODriveStatus, "odrive_status", self._odrive_status_subscriber_callback, DEFAULT_QOS, callback_group=ReentrantCallbackGroup())
         self._controller_status_subscriber = self.node.create_subscription(ControllerStatus, "controller_status", self._controller_status_subscriber_callback, DEFAULT_QOS, callback_group=ReentrantCallbackGroup())
         self._control_message_publisher = self.node.create_publisher(ControlMessage, "control_message", DEFAULT_QOS)
         self._axis_state_service_client = self.node.create_client(AxisStateService, "request_axis_state", callback_group=ReentrantCallbackGroup())
 
-        # init brake gpio pin
-        # self._gpio_controller = lgpio.gpiochip_open(0)
-        # self._magnetic_brake_gpio_pin = lgpio.gpio_claim_output(self._gpio_controller, MAGNETIC_BRAKE_PIN)
 
     async def roll_position(self, requested_position_cycles: float):
         # TODO: idea - define a minimum average travel velocity and check if since start_time the actual average velocity is larger
