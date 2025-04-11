@@ -18,7 +18,6 @@ def rclpy_init():
 
 def main():
     with rclpy_init:
-        rclpy.init()
         node = Node("odrive_ros2")
         executor = SingleThreadedExecutor()
         executor.add_node(node)
