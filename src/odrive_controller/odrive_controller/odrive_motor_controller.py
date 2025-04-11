@@ -89,7 +89,7 @@ class OdriveController:
         # TODO: move the minimum brake speed to an external variable
         self._publish_velocity_command(requested_velocity_rpm=0)
         await self._wait_for_velocity(requested_velocity=0)
-        self.set_brake_state(is_brake_locked=True)
+        await self.set_brake_state(is_brake_locked=True)
 
     async def _wait_for_velocity(self, requested_velocity: float):
         # TODO: timeout
@@ -128,7 +128,7 @@ class OdriveController:
         self._sleep_future.done()
         self._end_sleep_timer.cancel()
 
-    async def _set_axis_state(self, requested_state: AxisState) -> srv.AxisState.Response:
+    async def _set_axis_state(self, requested_state: AxisState):
         # TODO check for returned axis errors
         # TODO!!! CHECK WHEN THE SERVICE RETURNS??? DOES IT WAIT FOR THE STATE CHANGE TO COMPLETE???
         if self._last_controller_status.axis_state != requested_state:
